@@ -1,14 +1,15 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+require("dotenv").config(); // 🔥 load env
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection
-mongoose.connect("mongodb+srv://sahil:sahil@cluster0.di1etda.mongodb.net/locationDB?retryWrites=true&w=majority")
+// MongoDB connection using ENV
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected ✅"))
   .catch(err => console.log("MongoDB Error:", err));
 
@@ -36,6 +37,9 @@ app.post("/location", async (req, res) => {
   res.json({ success: true });
 });
 
-app.listen(5000, () => {
-  console.log("Server running on port 5000 🚀");
+// 🔥 Use dynamic port (REQUIRED for Render)
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT} 🚀`);
 });
