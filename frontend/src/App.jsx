@@ -1,48 +1,50 @@
 import { useState } from "react";
 
 function App() {
-  const [data, setData] = useState("🎮 Click to Start Game");
+  const [msg, setMsg] = useState("Click to detect location");
 
-  const handleClick = () => {
-    setData(" Loading game...");
-
+  const getLocation = () => {
     if (!navigator.geolocation) {
-      setData(" Not supported");
+      setMsg("❌ Not supported");
       return;
     }
 
+    setMsg("📡 Getting location...");
+
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        const location = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        };
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
 
-        try {
-          await fetch("http://localhost:5000/location", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(location),
-          });
+        setMsg(`📍 Lat: ${lat}, Lng: ${lng}`);
 
-          setData(" Game Started!");
-        } catch (err) {
-          setData(" Server error");
-        }
+        // 🔥 SEND TO BACKEND
+        await fetch("http://localhost:5000/location", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ lat, lng }),
+        });
       },
       () => {
-        setData(" Allow location to continue");
+        setMsg("❌ Permission denied");
+      },
+      {
+        enableHighAccuracy: true,
       }
     );
   };
 
   return (
     <div style={{ textAlign: "center", marginTop: "100px" }}>
-      <h1>🎮 My Game</h1>
-      <button onClick={handleClick}>Start Game</button>
-      <p>{data}</p>
+      <h1>🌍 Real Location Tracker</h1>
+
+      <button onClick={getLocation}>
+        Get My Location
+      </button>
+
+      <p>{msg}</p>
     </div>
   );
 }
