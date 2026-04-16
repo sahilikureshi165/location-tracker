@@ -59,7 +59,26 @@ app.post("/location", async (req, res) => {
 app.get("/locations", async (req, res) => {
   try {
     const data = await Location.find().sort({ time: -1 });
-    res.json(data);
+
+    const formattedData = data.map(item => ({
+      _id: item._id,
+      lat: item.lat,
+      lng: item.lng,
+
+      // ✅ Convert to Indian Time
+      time: new Date(item.time).toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+    }));
+
+    res.json(formattedData);
+
   } catch (err) {
     res.status(500).json({ message: "Error fetching data" });
   }
