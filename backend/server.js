@@ -5,14 +5,11 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ CORS (allow frontend)
-app.use(cors({
-  origin: "*"
-}));
-
+// ✅ Allow all origins (Vercel frontend)
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
-// ✅ MongoDB connection
+// ✅ MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected ✅"))
   .catch(err => console.log("MongoDB Error:", err));
@@ -26,66 +23,52 @@ const LocationSchema = new mongoose.Schema({
 
 const Location = mongoose.model("locations", LocationSchema);
 
-
-// ✅ ROOT ROUTE (IMPORTANT)
+// ✅ Root Route
 app.get("/", (req, res) => {
   res.send("🚀 Location Tracker API is running");
 });
 
-
-// ✅ SAVE LOCATION
+// ✅ Save Location
 app.post("/location", async (req, res) => {
   try {
     const { lat, lng } = req.body;
 
-    if (lat === undefined || lng === undefined) {
+    if (!lat || !lng) {
       return res.status(400).json({ message: "Invalid data" });
     }
 
-    const newLocation = await Location.create({ lat, lng });
-
-    console.log("📍 Saved:", newLocation);
+    await Location.create({ lat, lng });
 
     res.json({ success: true });
 
   } catch (err) {
-    console.error("Error saving location:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-
-// ✅ GET ALL LOCATIONS (VERY IMPORTANT)
+// ✅ Get Locations (IST Time)
 app.get("/locations", async (req, res) => {
   try {
     const data = await Location.find().sort({ time: -1 });
 
-    const formattedData = data.map(item => ({
-      _id: item._id,
+    const formatted = data.map(item => ({
       lat: item.lat,
       lng: item.lng,
-
-      // ✅ Convert to Indian Time
       time: new Date(item.time).toLocaleString("en-IN", {
         timeZone: "Asia/Kolkata",
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      })
+        dateStyle: "medium",
+        timeStyle: "short"
+      }) + " IST"
     }));
 
-    res.json(formattedData);
+    res.json(formatted);
 
   } catch (err) {
     res.status(500).json({ message: "Error fetching data" });
   }
 });
 
-
-// ✅ PORT (Render compatible)
+// ✅ Port (Render)
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
