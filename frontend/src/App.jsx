@@ -18,14 +18,16 @@ function App() {
 
         setMsg(`📍 Lat: ${lat}, Lng: ${lng}`);
 
-        // 🔥 SEND TO BACKEND
-        await fetch("http://localhost:5000/location", {
+        // ✅ LIVE BACKEND
+        await fetch("https://location-tracker-km22.onrender.com/location", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ lat, lng }),
         });
+
+        setMsg("✅ Location sent successfully 🚀");
       },
       () => {
         setMsg("❌ Permission denied");
